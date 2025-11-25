@@ -1,3 +1,4 @@
+from os import makedirs
 from pathlib import Path
 from requests import get
 import xml.etree.ElementTree as ET
@@ -16,11 +17,13 @@ BIBTEX_FILE = "bibtex.tex"
 
 
 def strip_zeros(rfc):
+    """Return RFCs without padded zeros"""
     rfc_number = rfc[3:].lstrip("0")
     return f"rfc{rfc_number}"
 
 
 def get_bibtex(rfc):
+    """Download missing BibTeX and return BibTeX content"""
     rfc = strip_zeros(rfc)
     filename = f"{BIBTEX_DIR}/{rfc}.bib"
 
@@ -43,6 +46,7 @@ def get_bibtex(rfc):
 
 
 def get_rfcs():
+    """Retuns sorted list of published RFCs"""
     print("Collecting RFC list.")
     response = get(RFC_INDEX)
     response.raise_for_status()
@@ -58,20 +62,21 @@ def get_rfcs():
     return rfcs
 
 
-def save_pickle(data, filename):
-    with open(filename, "wb") as file:
-        pickle.dump(data, file)
+# create BibTeX dir if doesn't exists
+makedirs(BIBTEX_DIR, exist_ok=True)
 
-
+# collect list of published RFCs
 rfcs = get_rfcs()
 
 big_bibtex = BIBTEX
 
 for rfc in rfcs:
+    # get BibTeX
     bibtex = get_bibtex(rfc)
     big_bibtex += "\n"
     big_bibtex += bibtex
 
+# write BibTeX
 with open(BIBTEX_FILE, "w", encoding="utf-8") as file:
     file.write(big_bibtex)
 
