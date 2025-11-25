@@ -73,6 +73,6 @@ for rfc in rfcs:
     big_bibtex += bibtex
 
 with open(BIBTEX_FILE, "w", encoding="utf-8") as file:
-    file.write(bibtex)
+    file.write(big_bibtex)
 
 print(f"{BIBTEX_FILE} written")
