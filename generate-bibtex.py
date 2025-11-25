@@ -1,9 +1,11 @@
+from pathlib import Path
 from requests import get
 import xml.etree.ElementTree as ET
 
 RFC_INDEX = "https://www.rfc-editor.org/rfc-index.xml"
 BIBTEX_URL_PREFIX = "https://datatracker.ietf.org/doc/"
 BIBTEX_URL_SUFFIX = "/bibtex/"
+BIBTEX_DIR = "bibtex"
 NS = {"RFCi": "https://www.rfc-editor.org/rfc-index"}
 BIBTEX = """%%% -*-BibTeX-*-
 %%% ===========================================
@@ -20,12 +22,24 @@ def strip_zeros(rfc):
 
 def get_bibtex(rfc):
     rfc = strip_zeros(rfc)
-    print(f"Getting BibTeX for {rfc}.")
-    url = f"{BIBTEX_URL_PREFIX}{rfc}{BIBTEX_URL_SUFFIX}"
-    response = get(url)
-    response.raise_for_status()
+    filename = f"{BIBTEX_DIR}/{rfc}.bib"
 
-    return response.content.decode("utf-8")
+    if Path(filename).exists():
+        print(f"{rfc} BibTeX already exists.")
+        bibtex = ""
+        with open(filename, "r", encoding="utf-8") as file:
+            bibtex = file.read()
+        return bibtex
+    else:
+        print(f"Getting BibTeX for {rfc}.")
+        url = f"{BIBTEX_URL_PREFIX}{rfc}{BIBTEX_URL_SUFFIX}"
+        response = get(url)
+        response.raise_for_status()
+
+        with open(filename, "wb") as file:
+            file.write(response.content)
+
+        return response.content.decode("utf-8")
 
 
 def get_rfcs():
@@ -44,12 +58,21 @@ def get_rfcs():
     return rfcs
 
 
+def save_pickle(data, filename):
+    with open(filename, "wb") as file:
+        pickle.dump(data, file)
+
+
 rfcs = get_rfcs()
-bibtex = BIBTEX
+
+big_bibtex = BIBTEX
 
 for rfc in rfcs:
-    bibtex += "\n"
-    bibtex += get_bibtex(rfc)
+    bibtex = get_bibtex(rfc)
+    big_bibtex += "\n"
+    big_bibtex += bibtex
 
 with open(BIBTEX_FILE, "w", encoding="utf-8") as file:
     file.write(bibtex)
+
+print(f"{BIBTEX_FILE} written")
